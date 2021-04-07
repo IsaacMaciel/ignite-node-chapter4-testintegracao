@@ -4,13 +4,14 @@ import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
 
-import './database';
+import createConnection from './database';
 import './shared/container';
 import { router } from './routes';
 import { AppError } from './shared/errors/AppError';
 import dotenv from 'dotenv'
 
 
+createConnection()
 const app = express();
 dotenv.config()
 app.use(cors());
