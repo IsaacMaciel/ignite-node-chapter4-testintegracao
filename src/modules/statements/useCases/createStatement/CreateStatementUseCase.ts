@@ -1,42 +1,64 @@
 import { inject, injectable } from "tsyringe";
 
 import { IUsersRepository } from "../../../users/repositories/IUsersRepository";
+import { Transfer } from "../../entities/Transfer";
 import { IStatementsRepository } from "../../repositories/IStatementsRepository";
+import { ITransferRepository } from "../../repositories/ITransferRepository";
 import { CreateStatementError } from "./CreateStatementError";
 import { ICreateStatementDTO } from "./ICreateStatementDTO";
 
 @injectable()
 export class CreateStatementUseCase {
   constructor(
-    @inject('UsersRepository')
+    @inject("UsersRepository")
     private usersRepository: IUsersRepository,
 
-    @inject('StatementsRepository')
-    private statementsRepository: IStatementsRepository
+    @inject("StatementsRepository")
+    private statementsRepository: IStatementsRepository,
+
+    @inject("TransferRepository")
+    private transferRepository: ITransferRepository
   ) {}
 
-  async execute({ user_id, type, amount, description }: ICreateStatementDTO) {
+  async execute({
+    user_id,
+    type,
+    amount,
+    description,
+    sender_id,
+  }: ICreateStatementDTO) {
     const user = await this.usersRepository.findById(user_id);
 
-    if(!user) {
+    if (!user) {
       throw new CreateStatementError.UserNotFound();
     }
 
-    if(type === 'withdraw') {
-      const { balance } = await this.statementsRepository.getUserBalance({ user_id });
+    if (type !== "deposit") {
+      const { balance } = await this.statementsRepository.getUserBalance({
+        user_id,
+      });
 
       if (balance < amount) {
-        throw new CreateStatementError.InsufficientFunds()
+        throw new CreateStatementError.InsufficientFunds();
       }
     }
 
-    const statementOperation = await this.statementsRepository.create({
+    if (sender_id) {
+      const transfer = await this.transferRepository.create(sender_id);
+      return await this.statementsRepository.create({
+        user_id,
+        type,
+        amount,
+        description,
+        transfer_id: transfer.id,
+      });
+    }
+
+    return await this.statementsRepository.create({
       user_id,
       type,
       amount,
-      description
+      description,
     });
-
-    return statementOperation;
   }
 }
