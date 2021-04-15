@@ -1,9 +1,7 @@
 import { inject, injectable } from "tsyringe";
 
 import { IUsersRepository } from "../../../users/repositories/IUsersRepository";
-import { Transfer } from "../../entities/Transfer";
 import { IStatementsRepository } from "../../repositories/IStatementsRepository";
-import { ITransferRepository } from "../../repositories/ITransferRepository";
 import { CreateStatementError } from "./CreateStatementError";
 import { ICreateStatementDTO } from "./ICreateStatementDTO";
 
@@ -14,10 +12,7 @@ export class CreateStatementUseCase {
     private usersRepository: IUsersRepository,
 
     @inject("StatementsRepository")
-    private statementsRepository: IStatementsRepository,
-
-    @inject("TransferRepository")
-    private transferRepository: ITransferRepository
+    private statementsRepository: IStatementsRepository
   ) {}
 
   async execute({
@@ -25,7 +20,7 @@ export class CreateStatementUseCase {
     type,
     amount,
     description,
-    sender_id,
+    receiver_id,
   }: ICreateStatementDTO) {
     const user = await this.usersRepository.findById(user_id);
 
@@ -41,17 +36,11 @@ export class CreateStatementUseCase {
       if (balance < amount) {
         throw new CreateStatementError.InsufficientFunds();
       }
-    }
 
-    if (sender_id) {
-      const transfer = await this.transferRepository.create(sender_id);
-      return await this.statementsRepository.create({
-        user_id,
-        type,
-        amount,
-        description,
-        transfer_id: transfer.id,
-      });
+      if (receiver_id) {
+        const receiver = await this.usersRepository.findById(receiver_id);
+        if (!receiver) throw new CreateStatementError.ReceiverNotFound();
+      }
     }
 
     return await this.statementsRepository.create({
@@ -59,6 +48,7 @@ export class CreateStatementUseCase {
       type,
       amount,
       description,
+      receiver_id
     });
   }
 }

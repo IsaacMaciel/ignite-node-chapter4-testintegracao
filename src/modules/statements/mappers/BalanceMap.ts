@@ -1,9 +1,11 @@
 import { Statement } from "../entities/Statement";
+import { Transfer } from "../useCases/getBalance/GetBalanceUseCase";
 
 export class BalanceMap {
-  static toDTO({statement, balance}: { statement: Statement[], balance: number}) {
+  static toDTO({statement,transfers, balance}: { statement: Statement[], transfers?: Transfer[] ,balance: number}) {
     const parsedStatement = statement.map(({
       id,
+      receiver_id,
       amount,
       description,
       type,
@@ -12,6 +14,7 @@ export class BalanceMap {
     }) => (
       {
         id,
+        receiver_id: receiver_id ? receiver_id : undefined,
         amount: Number(amount),
         description,
         type,
@@ -22,6 +25,7 @@ export class BalanceMap {
 
     return {
       statement: parsedStatement,
+      transfers,
       balance: Number(balance)
     }
   }

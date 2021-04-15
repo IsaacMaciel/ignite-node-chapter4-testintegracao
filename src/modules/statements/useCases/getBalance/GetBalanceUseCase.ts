@@ -9,9 +9,20 @@ interface IRequest {
   user_id: string;
 }
 
+export interface Transfer {
+  id: string;
+  sender_id: string;
+  amount: number;
+  description: string;
+  type: string;
+  created_at: Date;
+  updated_at: Date
+}
+
 interface IResponse {
   statement: Statement[];
   balance: number;
+  transfers?: Transfer[]
 }
 
 @injectable()
